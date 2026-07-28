@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # PowerPoint Image Collage
 
 This Python tool combines 1,000+ PNG images into one high-resolution collage sized for a modern widescreen PowerPoint slide (16:9). The default output is a 4K PNG: **3840 × 2160 pixels**.
@@ -35,3 +36,7 @@ python collage.py --recursive
 ```
 
 Run `python collage.py --help` for all options. PowerPoint's modern widescreen slide is 13.333 × 7.5 inches; PNG files have no fixed physical size, so the 16:9 pixel dimensions are what preserve the exact slide shape. In PowerPoint, insert the collage and set it to fill the slide.
+=======
+# image-collage-maker
+Creates a collage of inputted images.
+>>>>>>> 8cac07bce231e0e28388cc3acd2cc6fcb5b94595

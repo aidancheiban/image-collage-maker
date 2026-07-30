@@ -4,7 +4,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from collage import build_collage, choose_grid, find_pngs
+from collage import build_collage, choose_grid, find_images, main
 
 
 class CollageTests(unittest.TestCase):
@@ -27,13 +27,24 @@ class CollageTests(unittest.TestCase):
                 self.assertEqual(result.size, (320, 180))
                 self.assertEqual(result.mode, "RGB")
 
-    def test_find_pngs_is_case_insensitive_and_sorted(self):
+    def test_find_images_is_case_insensitive_and_sorted(self):
         with tempfile.TemporaryDirectory() as temporary:
             folder = Path(temporary)
             (folder / "B.PNG").touch()
-            (folder / "a.png").touch()
-            (folder / "ignore.jpg").touch()
-            self.assertEqual([path.name for path in find_pngs(folder)], ["a.png", "B.PNG"])
+            (folder / "a.jpg").touch()
+            (folder / "ignore.txt").touch()
+            self.assertEqual([path.name for path in find_images(folder)], ["a.jpg", "B.PNG"])
+
+    def test_main_accepts_positional_input_folder(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            folder = Path(temporary)
+            Image.new("RGBA", (50, 50), "red").save(folder / "sample.png")
+            output = folder / "result.png"
+
+            exit_code = main([str(folder), "--output", str(output)])
+
+            self.assertEqual(exit_code, 0)
+            self.assertTrue(output.exists())
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-"""Build a high-resolution, PowerPoint-sized collage from PNG images."""
+"""Build a high-resolution, PowerPoint-sized collage from image files."""
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ DEFAULT_WIDTH = 3840
 DEFAULT_HEIGHT = 2160
 DEFAULT_INPUT = Path("input_images")
 DEFAULT_OUTPUT = Path("collage.png")
+SUPPORTED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tif", ".tiff", ".gif"}
 
 
 def parse_color(value: str) -> tuple[int, int, int]:
@@ -39,11 +40,11 @@ def nonnegative_int(value: str) -> int:
     return number
 
 
-def find_pngs(folder: Path, recursive: bool = False) -> list[Path]:
-    """Return PNG files in stable, case-insensitive filename order."""
+def find_images(folder: Path, recursive: bool = False) -> list[Path]:
+    """Return supported image files in stable, case-insensitive filename order."""
     iterator = folder.rglob("*") if recursive else folder.iterdir()
     return sorted(
-        (path for path in iterator if path.is_file() and path.suffix.lower() == ".png"),
+        (path for path in iterator if path.is_file() and path.suffix.lower() in SUPPORTED_EXTENSIONS),
         key=lambda path: str(path.relative_to(folder)).casefold(),
     )
 
@@ -84,7 +85,7 @@ def build_collage(
 ) -> tuple[int, int]:
     """Compose paths into one RGB PNG and return (columns, rows)."""
     if not paths:
-        raise ValueError("No PNG images were provided")
+        raise ValueError("No supported images were provided")
 
     columns, rows = choose_grid(len(paths), width, height)
     x_edges = _edges(width, columns, gap)
@@ -127,7 +128,13 @@ def build_collage(
 
 def make_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Combine PNG files into a high-resolution 16:9 slide collage."
+        description="Combine image files into a high-resolution 16:9 slide collage."
+    )
+    parser.add_argument(
+        "input_path",
+        nargs="?",
+        type=Path,
+        help="optional input folder path (overrides --input when provided)",
     )
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT, help="input folder")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="output PNG")
@@ -142,16 +149,18 @@ def make_parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = make_parser().parse_args(argv)
-    if not args.input.is_dir():
-        print(f"Error: input folder does not exist: {args.input}", file=sys.stderr)
+    input_folder = args.input_path if args.input_path is not None else args.input
+    if not input_folder.is_dir():
+        print(f"Error: input folder does not exist: {input_folder}", file=sys.stderr)
         return 2
 
-    paths = find_pngs(args.input, args.recursive)
+    paths = find_images(input_folder, args.recursive)
     if not paths:
-        print(f"Error: no PNG files found in {args.input}", file=sys.stderr)
+        extensions = ", ".join(sorted(SUPPORTED_EXTENSIONS))
+        print(f"Error: no supported image files found in {input_folder} ({extensions})", file=sys.stderr)
         return 2
 
-    print(f"Found {len(paths):,} PNG files. Building {args.width}x{args.height} collage...")
+    print(f"Found {len(paths):,} image files. Building {args.width}x{args.height} collage...")
     try:
         columns, rows = build_collage(
             paths, args.output, args.width, args.height, args.gap, args.background, args.fit
